@@ -1,0 +1,42 @@
+image: golang
+
+stages:
+  - lint
+  - build
+  - test
+  - deploy
+
+cache:
+  key: "$CI_RUNNER_ID"
+
+testLint:
+  stage: lint
+  before_script:
+    - export GOBIN=$GOPATH/bin
+    - mv * $GOPATH
+    - cd $GOPATH
+    - go get
+    - curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s v1.30.0
+  script:
+    - ./bin/golangci-lint run
+  tags:
+    - linux
+  only:
+    - merge_requests
+
+build:
+  stage: build
+  before_script:
+    - export GOBIN=$GOPATH/bin
+    - mv * $GOPATH
+    - cd $GOPATH
+    - go get
+  script:
+    - go build -o /builds/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME/${CI_PROJECT_NAME}_${CI_PIPELINE_ID}
+    - ls /builds/$CI_PROJECT_NAMESPACE/$CI_PROJECT_NAME
+  artifacts:
+    paths:
+    - ${CI_PROJECT_NAME}_${CI_PIPELINE_ID}
+    expire_in: 5 days
+  tags:
+    - linux
